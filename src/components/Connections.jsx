@@ -13,8 +13,6 @@ const Connections = () => {
       const res = await axios.get(BASE_URL + "/user/connections", {
         withCredentials: true,
       });
-       console.log(res.data);      
-      console.log(res.data.data); 
       dispatch(addConnections(res.data.data));
     } catch (err) {
       console.error(err);
@@ -44,7 +42,7 @@ const Connections = () => {
               <img
                 alt="photo"
                 className="w-20 h-20 rounded-full"
-                src={photoUrl || "https://avatar.iran.liara.run/public"}
+                src={photoUrl || `https://ui-avatars.com/api/?name=${firstName}+${lastName}`}
               />
             </div>
             <div className="text-left mx-4">

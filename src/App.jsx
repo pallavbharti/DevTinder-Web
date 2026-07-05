@@ -13,7 +13,7 @@ function App() {
     <Provider store={store}>
       <Routes>
         <Route path="/" element={<Body />}>
-          <Route path="/" element={<h1>Feed Page</h1>} />
+           <Route index element={<Feed />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/feed" element={<Feed />} />

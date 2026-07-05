@@ -24,7 +24,7 @@ const UserCard = ({ user }) => {
     <div className="max-w-sm rounded overflow-hidden shadow-lg bg-base-300">
       <img
         className="w-full"
-        src={photoUrl || "https://avatar.iran.liara.run/public"}
+        src={photoUrl || `https://ui-avatars.com/api/?name=${firstName}+${lastName}`}
         alt="user"
       />
       <div className="px-6 py-4">
