@@ -18,6 +18,7 @@ function Body() {
       });
       dispatch(addUser(res.data));
     } catch(err) {
+      console.error("Error fetching user data:", err);
       navigate("/login");  // ← cookie nahi hai toh login pe bhejo
     }
   }

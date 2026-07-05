@@ -1,16 +1,23 @@
-import { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
+import { useDispatch, useSelector } from "react-redux";
+import { addFeed } from "../utils/feedSlice";
+import { useEffect } from "react";
+import UserCard from "./UserCard";
 
 const Feed = () => {
-  const [users, setUsers] = useState(null);
+  const feed = useSelector((store) => store.feed);
+  console.log(feed);
+  const dispatch = useDispatch();
 
   const getFeed = async () => {
+    if (feed) return;
     try {
-      const res = await axios.get(BASE_URL+"/user/feed", {
+      const res = await axios.get(BASE_URL + "/user/feed", {
         withCredentials: true,
       });
-      setUsers(res.data.data);
+      console.log(res);
+      dispatch(addFeed(res?.data?.data));
     } catch (err) {
       console.log(err);
     }
@@ -20,30 +27,14 @@ const Feed = () => {
     getFeed();
   }, []);
 
-  if (!users) return <h1 className="text-center mt-10">Loading...</h1>;
+  if (!feed) return <h1 className="text-center mt-10">Loading...</h1>;
+  if (feed.length === 0) return <h1 className="text-center mt-10">No more developers!</h1>;
 
-  return (
+  return (feed &&(
     <div className="flex justify-center my-10">
-      <div className="card bg-base-300 w-96 shadow-xl">
-        <figure>
-          <img
-            src={users[0]?.photoUrl || "https://www.pngall.com/wp-content/uploads/5/User-Profile-PNG-High-Quality-Image.png"}
-            alt="user"
-          />
-        </figure>
-        <div className="card-body">
-          <h2 className="card-title">
-            {users[0]?.firstName} {users[0]?.lastName}
-          </h2>
-          <p>{users[0]?.about || "No bio yet"}</p>
-          <div className="card-actions justify-center gap-5 mt-4">
-            <button className="btn btn-error">Ignore</button>
-            <button className="btn btn-success"> Interested</button>
-          </div>
-        </div>
-      </div>
+      <UserCard user={feed[0]} />
     </div>
+  )
   );
 };
-
 export default Feed;

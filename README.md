@@ -27,6 +27,19 @@
 - Logout
 - Profile Page
 
+- Get the feed and add the feed in the store
+- Build the user card on feed
+- Edit Profile Feature
+- Show Toast Message on save of profile
+- See all my connections
+- New Page - See all my connections
+- New Page - See all my Connection Requests
+- Feature - Accept/Reject Connection Request
+- Send/Ignore the user card from the feed
+
+Remaining:
+- Signup New User
+- E2E testing
 
 
 Body
