@@ -4,7 +4,7 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { removeUser } from "../utils/userSlice";
 import { removeFeed } from "../utils/feedSlice";
-
+// NavBar component
 const NavBar = () => {
   const user = useSelector((store) => store.user);
   const dispatch = useDispatch();   
@@ -76,9 +76,12 @@ const NavBar = () => {
               <li><Link to="/profile">Profile</Link></li>
               <li><Link to="/connections">Connections</Link></li>
               <li><Link to="/requests">requests</Link></li>
+               <li><Link to="/premium">Premium</Link></li> 
               <li><a onClick={handleLogout} className="cursor-pointer">Logout</a></li>
             </ul>
           </div>
+        
+          
         </div>
       )}
     </div>

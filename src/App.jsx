@@ -7,7 +7,7 @@ import store from './utils/appStore'
 import Feed from './components/Feed'
 import Connections from './components/Connections'
 import Requests from './components/Requests'
-
+import Premium from './components/Premium'
 function App() {
   return (
     <Provider store={store}>
@@ -19,6 +19,7 @@ function App() {
           <Route path="/feed" element={<Feed />} />
           <Route path="/connections" element={<Connections />} />
           <Route path="/requests" element={<Requests />} />
+          <Route path="/premium" element={<Premium />} />
         </Route>
       </Routes>
     </Provider>
