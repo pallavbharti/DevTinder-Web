@@ -1,70 +1,84 @@
-# DevTinder
+# DevTinder Frontend
 
-- Create a Vite + React application
-- Remove unecessary code and create a Hello World app
-- Install Tailwind CSS
-- Install Daisy UI
-- Add NavBar component to App.jsx
-- Create a NavBar.jsx separate Component file
-- Install react router dom
-- Create BrowserRouter > Routes > Route=/ Body > RouteChildren
-- Create an Outlet in your Body Component
-- Create a footer
+DevTinder is a Tinder-inspired networking application for developers where users can discover other developers, send connection requests, manage connections, and chat in real time.
 
-- Create a Login Page
-- Install axios
-💡 CORS - install cors in backend ⇒ add middleware with configurations: origin, credentials: true
-- Whenever you're making API call so pass axios ⇒ { withCredentials: true }
+This repository contains the frontend of DevTinder.
 
-- install react-redux + @reduxjs/toolkit - https://redux-toolkit.js.org/tutorials/quick-start
-- configureStore ⇒ Provider ⇒ createSlice ⇒ add reducer to store
-- Add redux devtools in chrome
-- Login and see if your data is coming properly in the store
-- NavBar should update as soon as user logs in
-- Refactor our code to add constants file + create a components folder
-- You should not be access other routes without login
-- If token is not present, redirect user to login page
-- Logout
-- Profile Page
+## Tech Stack
 
-- Get the feed and add the feed in the store
-- Build the user card on feed
-- Edit Profile Feature
-- Show Toast Message on save of profile
-- See all my connections
-- New Page - See all my connections
-- New Page - See all my Connection Requests
-- Feature - Accept/Reject Connection Request
-- Send/Ignore the user card from the feed
+- React
+- Vite
+- React Router DOM
+- Redux Toolkit
+- Axios
+- Tailwind CSS
+- DaisyUI
+- Socket.IO Client
 
-Remaining:
-- Signup New User
-- E2E testing
+## Features
 
+### Authentication
+- User Login
+- User Logout
+- Protected Routes
+- Cookie-based authentication
+- Redirect unauthenticated users to the Login page
 
+### Feed
+- View developer profiles
+- Send connection requests
+- Ignore developer profiles
+- Redux-based feed state management
+
+### Profile
+- View Profile
+- Edit Profile
+- Update user information
+- Toast message after profile update
+
+### Connections
+- View all connections
+- View received connection requests
+- Accept connection requests
+- Reject connection requests
+
+### Real-Time Chat
+- One-to-one real-time messaging using Socket.IO
+- Private chat rooms
+- Send and receive messages instantly
+- Persist messages in MongoDB through the backend
+- Fetch previous chat history
+- Previous messages remain available after page refresh
+- Display message timestamps
+
+## React Concepts Used
+
+- Components
+- Props
+- useState
+- useEffect
+- useParams
+- useNavigate
+- useSelector
+- Redux Toolkit
+- Conditional Rendering
+- Optional Chaining
+- Array.map()
+- Array.find()
+- Spread Operator
+- Object Destructuring
+- Async/Await
+
+## Application Structure
+
+```text
 Body
-    NavBar
-    Route=/  ⇒ Feed
-    Route=/login  ⇒ Login
-    Route=/connetions ⇒ Connections
-    Router=/profile ⇒ Profile
-
-
-
-
-
-
-# Step 1: Vite + React project create
-npm create vite@latest devtinder-web -- --template react
-cd devtinder-web
-npm install
-npm run dev
-
-# Step 3: Tailwind CSS install
-npm install tailwindcss @tailwindcss/vite
-
-# Step 4: Daisy UI install
-npm install daisyui@latest
-
-# Step 7: React Router DOM (abhi karna hai)
-npm install react-router-dom
+├── NavBar
+├── Outlet
+│   ├── Feed
+│   ├── Login
+│   ├── Profile
+│   ├── Connections
+│   ├── Requests
+│   └── Chat
+└── Footer

@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@import "daisyui";
+
+@plugin "daisyui";
+
 [data-theme] {
   transition: background-color 0.3s, color 0.3s;
 }

@@ -3,8 +3,18 @@ import { useDispatch } from "react-redux";
 import { BASE_URL } from "../utils/constants";
 import { removeUserFromFeed } from "../utils/feedSlice";
 
-const UserCard = ({ user }) => {
-  const { _id, firstName, lastName, photoUrl, age, gender, about, skills } = user;
+const UserCard = ({ user, showActions = true }) => {
+  const {
+    _id,
+    firstName,
+    lastName,
+    photoUrl,
+    age,
+    gender,
+    about,
+    skills,
+  } = user;
+
   const dispatch = useDispatch();
 
   const handleSendRequest = async (status, userId) => {
@@ -14,6 +24,7 @@ const UserCard = ({ user }) => {
         {},
         { withCredentials: true }
       );
+
       dispatch(removeUserFromFeed(userId));
     } catch (err) {
       console.error(err);
@@ -21,47 +32,62 @@ const UserCard = ({ user }) => {
   };
 
   return (
-    <div className="max-w-sm rounded overflow-hidden shadow-lg bg-base-300">
+    <div className="w-80 rounded-xl overflow-hidden shadow-lg bg-base-300">
       <img
-        className="w-full"
-        src={photoUrl || `https://ui-avatars.com/api/?name=${firstName}+${lastName}`}
-        alt="user"
+        className="w-full h-80 object-cover"
+        src={
+          photoUrl ||
+          `https://ui-avatars.com/api/?name=${firstName}+${lastName}`
+        }
+        alt={`${firstName} ${lastName}`}
       />
+
       <div className="px-6 py-4">
-        <div className="font-bold text-xl mb-2">
+        <div className="font-bold text-xl">
           {firstName} {lastName}
         </div>
-        <p className="text-base">
-          {age && gender ? `${age}, ${gender}` : ""}
-        </p>
-        <p className="text-base mt-2">
+
+        {age && gender && (
+          <p className="text-sm opacity-70 mt-1">
+            {age}, {gender}
+          </p>
+        )}
+
+        <p className="mt-3">
           {about || "No bio yet"}
         </p>
+
+        {skills?.length > 0 && (
+          <div className="mt-4">
+            {skills.map((skill, index) => (
+              <span
+                key={index}
+                className="badge badge-outline mr-2 mb-2"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="px-6 pt-4 pb-2">
-        {skills?.map((skill, index) => (
-          <span
-            key={index}
-            className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2"
+
+      {showActions && (
+        <div className="flex justify-center gap-4 px-6 pb-6">
+          <button
+            className="btn btn-error"
+            onClick={() => handleSendRequest("ignored", _id)}
           >
-            #{skill}
-          </span>
-        ))}
-      </div>
-      <div className="flex justify-center gap-5 pb-6">
-        <button
-          className="btn btn-error"
-          onClick={() => handleSendRequest("ignored", _id)}
-        >
-          ❌ Ignore
-        </button>
-        <button
-          className="btn btn-success"
-          onClick={() => handleSendRequest("interested", _id)}
-        >
-          ✅ Interested
-        </button>
-      </div>
+            ✕ Ignore
+          </button>
+
+          <button
+            className="btn btn-success"
+            onClick={() => handleSendRequest("interested", _id)}
+          >
+            ✓ Interested
+          </button>
+        </div>
+      )}
     </div>
   );
 };
