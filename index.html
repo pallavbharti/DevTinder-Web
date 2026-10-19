@@ -1,10 +1,31 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="devdark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>devtinder-web</title>
+    <meta name="description" content="DevTinder — swipe, match and chat with developers who share your stack." />
+    <meta name="theme-color" content="#0b0f17" />
+    <title>DevTinder — Find your dev match</title>
+
+    <!-- Apply saved theme BEFORE React loads, so there is no light/dark flash -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("devtinder-theme");
+          var prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+          var theme = saved || (prefersLight ? "devlight" : "devdark");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

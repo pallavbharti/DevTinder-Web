@@ -1,84 +1,28 @@
-# DevTinder Frontend
+# DevTinder — Frontend
 
-DevTinder is a Tinder-inspired networking application for developers where users can discover other developers, send connection requests, manage connections, and chat in real time.
+React 19 + Vite + Tailwind CSS v4 + daisyUI v5 + Redux Toolkit + React Router v7 + Socket.io client.
 
-This repository contains the frontend of DevTinder.
+## Run locally
+```bash
+npm install
+cp .env.example .env     # set VITE_API_URL if backend isn't on localhost:7777
+npm run dev
+```
 
-## Tech Stack
+## Deploy (Vercel / Netlify)
+1. Push this folder to GitHub and import it in Vercel (framework: Vite).
+2. Add env var `VITE_API_URL=https://your-backend.onrender.com` (no trailing slash).
+3. `vercel.json` / `public/_redirects` make page refresh on routes like `/connections` work.
 
-- React
-- Vite
-- React Router DOM
-- Redux Toolkit
-- Axios
-- Tailwind CSS
-- DaisyUI
-- Socket.IO Client
+Backend (Render/Railway) needs: `FRONTEND_URL=https://your-app.vercel.app`, `NODE_ENV=production`,
+plus `MONGO_URI`, `JWT_SECRET`, `PORT`.
 
-## Features
-
-### Authentication
-- User Login
-- User Logout
-- Protected Routes
-- Cookie-based authentication
-- Redirect unauthenticated users to the Login page
-
-### Feed
-- View developer profiles
-- Send connection requests
-- Ignore developer profiles
-- Redux-based feed state management
-
-### Profile
-- View Profile
-- Edit Profile
-- Update user information
-- Toast message after profile update
-
-### Connections
-- View all connections
-- View received connection requests
-- Accept connection requests
-- Reject connection requests
-
-### Real-Time Chat
-- One-to-one real-time messaging using Socket.IO
-- Private chat rooms
-- Send and receive messages instantly
-- Persist messages in MongoDB through the backend
-- Fetch previous chat history
-- Previous messages remain available after page refresh
-- Display message timestamps
-
-## React Concepts Used
-
-- Components
-- Props
-- useState
-- useEffect
-- useParams
-- useNavigate
-- useSelector
-- Redux Toolkit
-- Conditional Rendering
-- Optional Chaining
-- Array.map()
-- Array.find()
-- Spread Operator
-- Object Destructuring
-- Async/Await
-
-## Application Structure
-
-```text
-Body
-├── NavBar
-├── Outlet
-│   ├── Feed
-│   ├── Login
-│   ├── Profile
-│   ├── Connections
-│   ├── Requests
-│   └── Chat
-└── Footer
+## Structure
+```
+src/
+  hooks/useTheme.js        dark/light theme hook (localStorage + data-theme)
+  components/ui/Icons.jsx  inline SVG icons
+  components/ui/States.jsx PageHeader, EmptyState, skeleton loaders
+  components/*.jsx         pages (Feed, Login, Chat, ...)
+  utils/*Slice.js          Redux Toolkit slices
+```

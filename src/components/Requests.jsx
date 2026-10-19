@@ -1,101 +1,124 @@
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-import { BASE_URL } from "../utils/constants";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { BASE_URL, avatarFor } from "../utils/constants";
 import { addRequests, removeRequest } from "../utils/requestSlice";
+import { removeConnections } from "../utils/connectionSlice";
+import { PageHeader, EmptyState, ListSkeleton } from "./ui/States";
+import { InboxIcon, CheckIcon, XIcon } from "./ui/Icons";
 
 const Requests = () => {
   const dispatch = useDispatch();
   const requests = useSelector((store) => store.requests);
-  const [reviewedMap, setReviewedMap] = useState({});
+  const [busyId, setBusyId] = useState(null);
 
-  const fetchRequests = async () => {
-    try {
-      const res = await axios.get(BASE_URL + "/user/requests/recieves", {
-        withCredentials: true,
-      });
-      dispatch(addRequests(res.data.data));
-    } catch (err) {
-      console.error("Error fetching requests:", err);
-    }
-  };
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const res = await axios.get(BASE_URL + "/user/requests/recieves", { withCredentials: true });
+        dispatch(addRequests(res.data.data));
+      } catch (err) {
+        console.error("Error fetching requests:", err);
+        dispatch(addRequests([]));
+      }
+    };
+    fetchRequests();
+  }, [dispatch]);
 
   const reviewRequest = async (status, requestId) => {
+    setBusyId(requestId);
     try {
       await axios.post(
-        BASE_URL + "/request/review/" + status + "/" + requestId,
+        `${BASE_URL}/request/review/${status}/${requestId}`,
         {},
         { withCredentials: true }
       );
-      setReviewedMap((prev) => ({ ...prev, [requestId]: status }));
-      dispatch(removeRequest(requestId)); 
+      dispatch(removeRequest(requestId));
+      // a new connection may exist now → let Connections refetch fresh data
+      if (status === "accepted") dispatch(removeConnections());
     } catch (err) {
       console.error("Error reviewing request:", err);
+    } finally {
+      setBusyId(null);
     }
   };
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  if (!requests || requests.length === 0) {
-    return (
-      <div className="flex justify-center my-10">
-        <h2 className="text-xl font-bold">No pending requests</h2>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center my-10 gap-4">
-      <h2 className="text-2xl font-bold mb-4">Connection Requests</h2>
-      {requests.map((request) => {
-        const { firstName, lastName, photoUrl, age, gender, about } =
-          request.fromUserId;
-        const reviewed = reviewedMap[request._id];
+    <section>
+      <PageHeader
+        tag="cat requests --pending"
+        title="Connection requests"
+        subtitle={requests ? `${requests.length} pending` : "Checking your inbox…"}
+      />
 
-        return (
-          <div
-            key={request._id}
-            className="flex items-center justify-between bg-base-300 w-96 p-4 rounded-xl shadow gap-4"
-          >
-            <img
-              src={photoUrl || "https://avatar.iran.liara.run/public"}
-              alt="user"
-              className="w-14 h-14 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <p className="font-bold">{firstName} {lastName}</p>
-              {age && gender && <p className="text-sm">{age}, {gender}</p>}
-              {about && <p className="text-sm">{about}</p>}
-            </div>
+      {!requests && <ListSkeleton rows={3} />}
 
-            {reviewed ? (
-              <p className={`font-semibold text-sm ${
-                reviewed === "accepted" ? "text-green-500" : "text-red-500"
-              }`}>
-                {reviewed === "accepted" ? "Accepted ✅" : "Rejected ❌"}
-              </p>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-error btn-sm"
-                  onClick={() => reviewRequest("rejected", request._id)}
-                >
-                  Reject
-                </button>
-                <button
-                  className="btn btn-success btn-sm"
-                  onClick={() => reviewRequest("accepted", request._id)}
-                >
-                  Accept
-                </button>
+      {requests?.length === 0 && (
+        <EmptyState
+          icon={InboxIcon}
+          title="Inbox zero 🎉"
+          text="No pending requests. When someone is interested in you, they'll show up here."
+          action={<Link to="/" className="btn btn-primary">Browse developers</Link>}
+        />
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {requests?.map((request, i) => {
+          const { firstName, lastName, photoUrl, age, gender, about, skills } = request.fromUserId;
+          const busy = busyId === request._id;
+          return (
+            <article
+              key={request._id}
+              className="glass-card rounded-box p-5 flex gap-4 items-start animate-fade-up"
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <img
+                src={photoUrl || avatarFor(firstName, lastName)}
+                alt={firstName}
+                className="w-16 h-16 rounded-2xl object-cover ring-1 ring-base-content/10 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold text-lg truncate">{firstName} {lastName}</h2>
+                  <span className="hidden sm:inline-flex badge badge-accent badge-soft badge-sm">wants to connect</span>
+                </div>
+                {(age || gender) && (
+                  <p className="font-mono text-xs text-base-content/50 uppercase">
+                    {[age, gender].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {about && <p className="text-sm text-base-content/70 mt-2 line-clamp-2">{about}</p>}
+                {skills?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {skills.slice(0, 4).map((s) => (
+                      <span key={s} className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-secondary/10 text-secondary">{s}</span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-4">
+                  <button
+                    className="btn btn-sm btn-success gap-1"
+                    disabled={busy}
+                    onClick={() => reviewRequest("accepted", request._id)}
+                  >
+                    <CheckIcon className="w-4 h-4" /> Accept
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost text-error gap-1"
+                    disabled={busy}
+                    onClick={() => reviewRequest("rejected", request._id)}
+                  >
+                    <XIcon className="w-4 h-4" /> Decline
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 
