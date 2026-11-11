@@ -1,20 +1,19 @@
 <!doctype html>
-<html lang="en" data-theme="devdark">
+<html lang="en" data-theme="beige">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="DevTinder — swipe, match and chat with developers who share your stack." />
-    <meta name="theme-color" content="#0b0f17" />
-    <title>DevTinder — Find your dev match</title>
+    <meta name="description" content="DevTinder: meet developers, connect and chat." />
+    <title>DevTinder</title>
 
-    <!-- Apply saved theme BEFORE React loads, so there is no light/dark flash -->
+    <!-- Theme pehle hi set kar do, warna page load pe light→dark "flash" dikhta hai -->
     <script>
       (function () {
         try {
-          var saved = localStorage.getItem("devtinder-theme");
-          var prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-          var theme = saved || (prefersLight ? "devlight" : "devdark");
+          var saved = localStorage.getItem("theme");
+          var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = saved || (prefersDark ? "beigedark" : "beige");
           document.documentElement.setAttribute("data-theme", theme);
         } catch (e) {}
       })();
@@ -23,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap"
       rel="stylesheet"
     />
   </head>

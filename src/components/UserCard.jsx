@@ -1,53 +1,63 @@
-import { avatarFor } from "../utils/constants";
-import { XIcon, HeartIcon } from "./ui/Icons";
+import axios from "axios";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { BASE_URL } from "../utils/constants";
+import { removeUserFromFeed } from "../utils/feedSlice";
+import Avatar from "./Avatar";
 
-/**
- * Pure presentational card. It does NOT call the API itself —
- * the parent (Feed) passes onIgnore / onInterested. That keeps the
- * card reusable (Feed + Profile preview) and easy to test.
- */
-const UserCard = ({ user, onIgnore, onInterested, swipe = "", disabled = false }) => {
-  const { firstName, lastName, photoUrl, age, gender, about, skills } = user;
-  const showActions = Boolean(onIgnore && onInterested);
+const UserCard = ({ user, showActions = true }) => {
+  const { _id, firstName, lastName, photoUrl, age, gender, about, skills } = user;
+  const dispatch = useDispatch();
+  const [busy, setBusy] = useState(false);
+
+  const handleSendRequest = async (status, userId) => {
+    // BUG FIX: pehle double-click se do request jaati thi → backend "already exists" error
+    if (busy) return;
+    setBusy(true);
+    try {
+      await axios.post(
+        BASE_URL + "/request/send/" + status + "/" + userId,
+        {},
+        { withCredentials: true }
+      );
+      dispatch(removeUserFromFeed(userId));
+    } catch (err) {
+      console.error(err);
+      setBusy(false);
+    }
+  };
+
+  const hasPhoto = photoUrl && !photoUrl.includes("pngall.com");
+  const details = [age, gender].filter(Boolean).join(" · ");
 
   return (
-    <article
-      className={`swipe-card ${swipe} w-full max-w-sm glass-card ring-gradient rounded-box overflow-hidden shadow-2xl shadow-black/20`}
-    >
-      <div className="relative h-96">
+    <article className="card bg-base-100 border border-base-300 w-full max-w-sm overflow-hidden">
+      {hasPhoto ? (
         <img
-          className="w-full h-full object-cover"
-          src={photoUrl || avatarFor(firstName, lastName)}
+          className="w-full h-72 object-cover bg-base-300"
+          src={photoUrl}
           alt={`${firstName} ${lastName || ""}`}
-          onError={(e) => {
-            e.currentTarget.src = avatarFor(firstName, lastName);
-          }}
         />
-        {/* gradient so text is readable on any photo */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-          <h2 className="text-2xl font-bold">
-            {firstName || "Your"} {lastName || "Name"}
-            {age ? <span className="font-normal opacity-80">, {age}</span> : null}
-          </h2>
-          {gender && (
-            <p className="font-mono text-xs uppercase tracking-wider opacity-70 mt-1">{gender}</p>
-          )}
+      ) : (
+        <div className="h-48 bg-base-200 grid place-items-center">
+          <Avatar user={{ firstName, lastName }} size={96} />
         </div>
-      </div>
+      )}
 
-      <div className="p-5">
-        <p className="text-sm text-base-content/75 leading-relaxed line-clamp-3">
-          {about || "No bio yet"}
-        </p>
+      <div className="card-body gap-2">
+        <div>
+          <h2 className="text-2xl font-semibold leading-tight">
+            {firstName} {lastName}
+          </h2>
+          {details && <p className="text-sm opacity-60 capitalize">{details}</p>}
+        </div>
+
+        <p className="opacity-85">{about || "No bio yet."}</p>
 
         {skills?.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {skills.slice(0, 6).map((skill) => (
-              <span
-                key={skill}
-                className="font-mono text-xs px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary border border-secondary/20"
-              >
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {skills.map((skill) => (
+              <span key={skill} className="px-2 py-0.5 rounded-md bg-base-200 text-sm">
                 {skill}
               </span>
             ))}
@@ -55,24 +65,20 @@ const UserCard = ({ user, onIgnore, onInterested, swipe = "", disabled = false }
         )}
 
         {showActions && (
-          <div className="flex justify-center gap-6 mt-6">
+          <div className="grid grid-cols-2 gap-3 mt-4">
             <button
-              className="btn btn-circle btn-lg btn-outline border-error/40 text-error hover:bg-error hover:text-error-content hover:border-error"
-              onClick={onIgnore}
-              disabled={disabled}
-              aria-label="Ignore"
-              title="Ignore (←)"
+              className="btn btn-outline"
+              disabled={busy}
+              onClick={() => handleSendRequest("ignored", _id)}
             >
-              <XIcon className="w-6 h-6" />
+              Pass
             </button>
             <button
-              className="btn btn-circle btn-lg border-0 bg-gradient-to-br from-accent to-primary text-white shadow-lg shadow-accent/30 hover:scale-105"
-              onClick={onInterested}
-              disabled={disabled}
-              aria-label="Interested"
-              title="Interested (→)"
+              className="btn btn-primary"
+              disabled={busy}
+              onClick={() => handleSendRequest("interested", _id)}
             >
-              <HeartIcon className="w-6 h-6" />
+              Connect
             </button>
           </div>
         )}

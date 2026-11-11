@@ -1,53 +1,26 @@
 import { useSelector, useDispatch } from "react-redux";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BASE_URL, avatarFor } from "../utils/constants";
+import { BASE_URL } from "../utils/constants";
 import { removeUser } from "../utils/userSlice";
 import { removeFeed } from "../utils/feedSlice";
 import { removeConnections } from "../utils/connectionSlice";
 import { clearRequests } from "../utils/requestSlice";
 import useTheme from "../hooks/useTheme";
-import {
-  SunIcon, MoonIcon, FlameIcon, UsersIcon, InboxIcon, CrownIcon,
-  UserIcon, LogoutIcon, MenuIcon,
-} from "./ui/Icons";
+import Avatar from "./Avatar";
 
 const links = [
-  { to: "/", label: "Feed", icon: FlameIcon, end: true },
-  { to: "/connections", label: "Connections", icon: UsersIcon },
-  { to: "/requests", label: "Requests", icon: InboxIcon },
-  { to: "/premium", label: "Premium", icon: CrownIcon },
+  { to: "/", label: "Discover", end: true },
+  { to: "/connections", label: "Messages" },
+  { to: "/requests", label: "Requests" },
 ];
-
-export const Logo = () => (
-  <Link to="/" className="flex items-center gap-2 group" aria-label="DevTinder home">
-    <span className="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-content font-mono font-bold text-sm shadow-lg shadow-primary/30 group-hover:scale-105 transition">
-      {"</>"}
-    </span>
-    <span className="font-display font-bold text-lg tracking-tight">
-      Dev<span className="text-gradient">Tinder</span>
-    </span>
-  </Link>
-);
-
-const ThemeToggle = () => {
-  const { isDark, toggleTheme } = useTheme();
-  return (
-    <button
-      onClick={toggleTheme}
-      className="btn btn-ghost btn-circle btn-sm"
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Light mode" : "Dark mode"}
-    >
-      {isDark ? <SunIcon /> : <MoonIcon />}
-    </button>
-  );
-};
 
 const NavBar = () => {
   const user = useSelector((store) => store.user);
+  const requests = useSelector((store) => store.requests);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     try {
@@ -55,7 +28,8 @@ const NavBar = () => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear every slice so the next user doesn't see stale data
+      // BUG FIX: pehle sirf user + feed clear hota tha.
+      // Doosra user login kare toh pichle user ke connections/requests dikhte the.
       dispatch(removeUser());
       dispatch(removeFeed());
       dispatch(removeConnections());
@@ -64,85 +38,88 @@ const NavBar = () => {
     }
   };
 
+  const pendingCount = requests?.length || 0;
+
   const linkClass = ({ isActive }) =>
-    `flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition ${
-      isActive
-        ? "bg-primary/15 text-primary"
-        : "text-base-content/70 hover:text-base-content hover:bg-base-content/5"
-    }`;
+    "px-3 py-1.5 rounded-md text-sm font-medium transition-colors " +
+    (isActive ? "bg-base-200 text-base-content" : "opacity-70 hover:opacity-100 hover:bg-base-200");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-base-content/10 bg-base-100/70 backdrop-blur-xl">
-      <nav className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-3">
-        <Logo />
+    <header className="navbar bg-base-100 border-b border-base-300 px-4 min-h-14 sticky top-0 z-30">
+      <div className="flex-1 flex items-center gap-6">
+        <Link to="/" className="font-serif text-xl font-semibold tracking-tight">
+          dev<span className="text-accent">tinder</span>
+        </Link>
 
         {user && (
-          <ul className="hidden md:flex items-center gap-1 ml-6">
-            {links.map(({ to, label, icon: Icon, end }) => (
-              <li key={to}>
-                <NavLink to={to} end={end} className={linkClass}>
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </NavLink>
-              </li>
+          <nav className="hidden sm:flex items-center gap-1">
+            {links.map((l) => (
+              <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
+                {l.label}
+                {l.to === "/requests" && pendingCount > 0 && (
+                  <span className="ml-1.5 badge badge-sm badge-accent">{pendingCount}</span>
+                )}
+              </NavLink>
             ))}
-          </ul>
+          </nav>
         )}
+      </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={toggleTheme}
+          className="btn btn-ghost btn-sm btn-circle"
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          title={isDark ? "Light mode" : "Dark mode"}
+        >
+          {isDark ? <SunIcon /> : <MoonIcon />}
+        </button>
 
-          {user && (
-            <>
-              {/* Mobile menu */}
-              <div className="dropdown dropdown-end md:hidden">
-                <button tabIndex={0} className="btn btn-ghost btn-circle btn-sm" aria-label="Open menu">
-                  <MenuIcon />
-                </button>
-                <ul tabIndex={0} className="menu dropdown-content glass-card rounded-box z-50 mt-3 w-56 p-2 shadow-xl">
-                  {links.map(({ to, label, icon: Icon, end }) => (
-                    <li key={to}>
-                      <NavLink to={to} end={end}>
-                        <Icon className="w-4 h-4" /> {label}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Avatar menu */}
-              <div className="dropdown dropdown-end">
-                <div tabIndex={0} role="button" className="flex items-center gap-2 pl-1 pr-1 sm:pr-3 py-1 rounded-full hover:bg-base-content/5 transition cursor-pointer">
-                  <div className="avatar">
-                    <div className="w-9 rounded-full ring-2 ring-primary/60 ring-offset-2 ring-offset-base-100">
-                      <img
-                        alt={user.firstName}
-                        src={user.photoUrl || avatarFor(user.firstName, user.lastName)}
-                      />
-                    </div>
-                  </div>
-                  <span className="hidden sm:block text-sm font-medium">{user.firstName}</span>
-                </div>
-                <ul tabIndex={0} className="menu dropdown-content glass-card rounded-box z-50 mt-3 w-56 p-2 shadow-xl">
-                  <li className="menu-title font-mono text-xs">
-                    signed in as {user.firstName}
-                  </li>
-                  <li>
-                    <Link to="/profile"><UserIcon className="w-4 h-4" /> Edit profile</Link>
-                  </li>
-                  <li>
-                    <button onClick={handleLogout} className="text-error">
-                      <LogoutIcon className="w-4 h-4" /> Logout
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </>
-          )}
-        </div>
-      </nav>
+        {user && (
+          <div className="dropdown dropdown-end">
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-sm gap-2 px-1.5">
+              <Avatar user={user} size={30} />
+              <span className="hidden md:inline text-sm font-medium">{user.firstName}</span>
+            </div>
+            <ul
+              tabIndex={0}
+              className="menu menu-sm dropdown-content bg-base-100 border border-base-300 rounded-box z-40 mt-2 w-52 p-2 shadow-sm"
+            >
+              {/* mobile pe upar ke links yahan aate hain */}
+              {links.map((l) => (
+                <li key={l.to} className="sm:hidden">
+                  <Link to={l.to}>
+                    {l.label}
+                    {l.to === "/requests" && pendingCount > 0 && (
+                      <span className="badge badge-sm badge-accent">{pendingCount}</span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+              <li><Link to="/profile">Edit profile</Link></li>
+              <li><Link to="/premium">Premium</Link></li>
+              <li className="border-t border-base-300 mt-1 pt-1">
+                <button onClick={handleLogout}>Log out</button>
+              </li>
+            </ul>
+          </div>
+        )}
+      </div>
     </header>
   );
 };
+
+const SunIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <circle cx="12" cy="12" r="4.5" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+  </svg>
+);
 
 export default NavBar;

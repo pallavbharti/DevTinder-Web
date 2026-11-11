@@ -1,33 +1,25 @@
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "devtinder-theme";
-export const DARK = "devdark";
-export const LIGHT = "devlight";
-
-// Initial value: whatever index.html already put on <html> (saved choice or OS preference)
-const getInitialTheme = () =>
-  document.documentElement.getAttribute("data-theme") || DARK;
-
-/**
- * Custom hook: keeps the theme in React state, mirrors it to the
- * <html data-theme="..."> attribute (daisyUI reads this) and to localStorage
- * so the choice survives a page refresh.
- */
+// Light = "beige", Dark = "beigedark" (index.css mein bane hain)
+// localStorage mein save hota hai, taaki refresh pe theme yaad rahe
 const useTheme = () => {
-  const [theme, setTheme] = useState(getInitialTheme);
+  const [theme, setTheme] = useState(
+    () => document.documentElement.getAttribute("data-theme") || "beige"
+  );
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.setItem("theme", theme);
     } catch {
-      /* private mode / storage blocked — theme still works for this visit */
+      // private mode mein localStorage fail ho sakta hai — ignore
     }
   }, [theme]);
 
-  const toggleTheme = () => setTheme((t) => (t === DARK ? LIGHT : DARK));
+  const toggleTheme = () =>
+    setTheme((t) => (t === "beigedark" ? "beige" : "beigedark"));
 
-  return { theme, isDark: theme === DARK, toggleTheme };
+  return { isDark: theme === "beigedark", toggleTheme };
 };
 
 export default useTheme;

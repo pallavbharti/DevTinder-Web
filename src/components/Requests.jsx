@@ -1,41 +1,37 @@
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { BASE_URL, avatarFor } from "../utils/constants";
+import { BASE_URL } from "../utils/constants";
 import { addRequests, removeRequest } from "../utils/requestSlice";
 import { removeConnections } from "../utils/connectionSlice";
-import { PageHeader, EmptyState, ListSkeleton } from "./ui/States";
-import { InboxIcon, CheckIcon, XIcon } from "./ui/Icons";
+import Avatar from "./Avatar";
+import { Empty } from "./Feed";
 
 const Requests = () => {
   const dispatch = useDispatch();
   const requests = useSelector((store) => store.requests);
   const [busyId, setBusyId] = useState(null);
 
+  // Har baar page khulne pe fresh list (koi naya request aaya ho)
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const res = await axios.get(BASE_URL + "/user/requests/recieves", { withCredentials: true });
-        dispatch(addRequests(res.data.data));
-      } catch (err) {
-        console.error("Error fetching requests:", err);
-        dispatch(addRequests([]));
-      }
-    };
-    fetchRequests();
+    axios
+      .get(BASE_URL + "/user/requests/recieves", { withCredentials: true })
+      .then((res) => dispatch(addRequests(res.data.data)))
+      .catch((err) => console.error("Error fetching requests:", err));
   }, [dispatch]);
 
   const reviewRequest = async (status, requestId) => {
     setBusyId(requestId);
     try {
       await axios.post(
-        `${BASE_URL}/request/review/${status}/${requestId}`,
+        BASE_URL + "/request/review/" + status + "/" + requestId,
         {},
         { withCredentials: true }
       );
       dispatch(removeRequest(requestId));
-      // a new connection may exist now → let Connections refetch fresh data
+      // BUG FIX: accept ke baad Messages mein naya connection nahi dikhta tha
+      // (purani list cache mein thi). Ab cache clear → Messages fresh fetch karega.
       if (status === "accepted") dispatch(removeConnections());
     } catch (err) {
       console.error("Error reviewing request:", err);
@@ -44,81 +40,72 @@ const Requests = () => {
     }
   };
 
+  if (!requests) {
+    return (
+      <div className="flex justify-center py-24">
+        <span className="loading loading-spinner loading-md opacity-60" />
+      </div>
+    );
+  }
+
+  if (requests.length === 0) {
+    return (
+      <Empty title="No pending requests" text="When someone wants to connect with you, they'll show up here.">
+        <Link to="/" className="btn btn-primary btn-sm">Discover developers</Link>
+      </Empty>
+    );
+  }
+
   return (
-    <section>
-      <PageHeader
-        tag="cat requests --pending"
-        title="Connection requests"
-        subtitle={requests ? `${requests.length} pending` : "Checking your inbox…"}
-      />
+    <div className="max-w-2xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-1">Requests</h1>
+      <p className="text-sm opacity-70 mb-5">
+        {requests.length} {requests.length === 1 ? "person wants" : "people want"} to connect with you.
+      </p>
 
-      {!requests && <ListSkeleton rows={3} />}
-
-      {requests?.length === 0 && (
-        <EmptyState
-          icon={InboxIcon}
-          title="Inbox zero 🎉"
-          text="No pending requests. When someone is interested in you, they'll show up here."
-          action={<Link to="/" className="btn btn-primary">Browse developers</Link>}
-        />
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {requests?.map((request, i) => {
-          const { firstName, lastName, photoUrl, age, gender, about, skills } = request.fromUserId;
+      <ul className="flex flex-col gap-3">
+        {requests.map((request) => {
+          const from = request.fromUserId;
+          // user delete ho chuka ho toh populate null deta hai
+          if (!from) return null;
+          const { firstName, lastName, age, gender, about, skills } = from;
           const busy = busyId === request._id;
-          return (
-            <article
-              key={request._id}
-              className="glass-card rounded-box p-5 flex gap-4 items-start animate-fade-up"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <img
-                src={photoUrl || avatarFor(firstName, lastName)}
-                alt={firstName}
-                className="w-16 h-16 rounded-2xl object-cover ring-1 ring-base-content/10 shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-lg truncate">{firstName} {lastName}</h2>
-                  <span className="hidden sm:inline-flex badge badge-accent badge-soft badge-sm">wants to connect</span>
-                </div>
-                {(age || gender) && (
-                  <p className="font-mono text-xs text-base-content/50 uppercase">
-                    {[age, gender].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-                {about && <p className="text-sm text-base-content/70 mt-2 line-clamp-2">{about}</p>}
-                {skills?.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {skills.slice(0, 4).map((s) => (
-                      <span key={s} className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-secondary/10 text-secondary">{s}</span>
-                    ))}
-                  </div>
-                )}
+          const details = [age, gender].filter(Boolean).join(" · ");
 
-                <div className="flex gap-2 mt-4">
+          return (
+            <li key={request._id} className="card bg-base-100 border border-base-300">
+              <div className="card-body p-4 sm:flex-row sm:items-center gap-4">
+                <Avatar user={from} size={56} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold">{firstName} {lastName}</p>
+                  {details && <p className="text-sm opacity-60 capitalize">{details}</p>}
+                  {about && <p className="text-sm opacity-80 mt-1 line-clamp-2">{about}</p>}
+                  {skills?.length > 0 && (
+                    <p className="text-xs opacity-60 mt-1">{skills.slice(0, 4).join(" · ")}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 shrink-0">
                   <button
-                    className="btn btn-sm btn-success gap-1"
-                    disabled={busy}
-                    onClick={() => reviewRequest("accepted", request._id)}
-                  >
-                    <CheckIcon className="w-4 h-4" /> Accept
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost text-error gap-1"
+                    className="btn btn-sm btn-outline"
                     disabled={busy}
                     onClick={() => reviewRequest("rejected", request._id)}
                   >
-                    <XIcon className="w-4 h-4" /> Decline
+                    Decline
+                  </button>
+                  <button
+                    className="btn btn-sm btn-primary"
+                    disabled={busy}
+                    onClick={() => reviewRequest("accepted", request._id)}
+                  >
+                    Accept
                   </button>
                 </div>
               </div>
-            </article>
+            </li>
           );
         })}
-      </div>
-    </section>
+      </ul>
+    </div>
   );
 };
 

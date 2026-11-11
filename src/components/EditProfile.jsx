@@ -4,171 +4,166 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { addUser } from "../utils/userSlice";
 import UserCard from "./UserCard";
-import { PageHeader } from "./ui/States";
-import { XIcon } from "./ui/Icons";
 
-const inputCls = "input w-full mt-1.5 bg-base-100/60 focus:border-primary";
-const Label = ({ children }) => (
-  <span className="font-mono text-xs text-base-content/60">{children}</span>
-);
+const readError = (err) => {
+  const data = err?.response?.data;
+  if (typeof data === "string") return data.replace(/^ERROR\s*:\s*/i, "");
+  return data?.message || "Something went wrong!";
+};
 
 const EditProfile = ({ user }) => {
-  // One state object instead of 7 separate useState calls
-  const [form, setForm] = useState({
-    firstName: user.firstName || "",
-    lastName: user.lastName || "",
-    photoUrl: user.photoUrl || "",
-    age: user.age || "",
-    gender: user.gender || "",
-    about: user.about || "",
-    skills: user.skills || [],
-  });
-  const [skillInput, setSkillInput] = useState("");
+  const [firstName, setFirstName] = useState(user.firstName || "");
+  const [lastName, setLastName] = useState(user.lastName || "");
+  // backend ka default (generic) photo link box mein dikhane ka fayda nahi
+  const [photoUrl, setPhotoUrl] = useState(
+    user.photoUrl && !user.photoUrl.includes("pngall.com") ? user.photoUrl : ""
+  );
+  const [age, setAge] = useState(user.age || "");
+  const [gender, setGender] = useState(user.gender || "");
+  const [about, setAbout] = useState(user.about || "");
+  // skills array hai, input mein comma se likhte hain: "React, Node, Docker"
+  const [skillsText, setSkillsText] = useState((user.skills || []).join(", "));
+
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+
   const dispatch = useDispatch();
 
-  // Generic change handler: input's `name` must match the key in `form`
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const addSkill = () => {
-    const s = skillInput.trim();
-    if (!s || form.skills.includes(s) || form.skills.length >= 10) return;
-    setForm((prev) => ({ ...prev, skills: [...prev.skills, s] }));
-    setSkillInput("");
-  };
-
-  const removeSkill = (skill) =>
-    setForm((prev) => ({ ...prev, skills: prev.skills.filter((s) => s !== skill) }));
+  const skills = skillsText
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   const saveProfile = async (e) => {
     e.preventDefault();
     setError("");
     setSaving(true);
+
+    // BUG FIX: khaali photoUrl bhejne pe backend ka URL validator fail hota tha,
+    // aur khaali age Number("") = 0 ban jaati thi. Ab sirf bhari hui fields jaati hain.
+    const body = { firstName, lastName, about, skills };
+    if (photoUrl.trim()) body.photoUrl = photoUrl.trim();
+    if (age !== "") body.age = Number(age);
+    if (gender) body.gender = gender;
+
     try {
-      const payload = { ...form, age: form.age ? Number(form.age) : undefined };
-      if (!payload.gender) delete payload.gender; // backend rejects empty gender
-      const res = await axios.patch(BASE_URL + "/profile/edit", payload, { withCredentials: true });
+      const res = await axios.patch(BASE_URL + "/profile/edit", body, {
+        withCredentials: true,
+      });
       dispatch(addUser(res?.data?.data));
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      setTimeout(() => setShowToast(false), 2500);
     } catch (err) {
-      const msg = err?.response?.data;
-      setError(typeof msg === "string" ? msg.replace(/^ERROR\s*:\s*/, "") : "Something went wrong!");
+      setError(readError(err));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <section>
-      <PageHeader tag="vim profile.json" title="Edit profile" subtitle="This is how other developers will see you." />
-
+    <>
       <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-start">
-        <form onSubmit={saveProfile} className="glass-card rounded-box p-6 sm:p-8 space-y-5 animate-fade-up">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <label className="block">
-              <Label>first_name</Label>
-              <input name="firstName" value={form.firstName} onChange={handleChange} className={inputCls} required />
-            </label>
-            <label className="block">
-              <Label>last_name</Label>
-              <input name="lastName" value={form.lastName} onChange={handleChange} className={inputCls} />
-            </label>
-          </div>
-
-          <label className="block">
-            <Label>photo_url</Label>
-            <input name="photoUrl" type="url" value={form.photoUrl} onChange={handleChange} className={inputCls} placeholder="https://…" />
-          </label>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="block">
-              <Label>age</Label>
-              <input name="age" type="number" min="18" max="100" value={form.age} onChange={handleChange} className={inputCls} />
-            </label>
-            <label className="block">
-              <Label>gender</Label>
-              <select name="gender" value={form.gender} onChange={handleChange} className="select w-full mt-1.5 bg-base-100/60">
-                <option value="">Prefer not to say</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="others">Others</option>
-              </select>
-            </label>
-          </div>
-
-          <label className="block">
-            <div className="flex justify-between">
-              <Label>about</Label>
-              <span className="font-mono text-xs text-base-content/40">{form.about.length}/300</span>
+        <form onSubmit={saveProfile} className="card bg-base-100 border border-base-300">
+          <div className="card-body gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">Your profile</h1>
+              <p className="text-sm opacity-70">This is what other developers see on your card.</p>
             </div>
-            <textarea
-              name="about"
-              value={form.about}
-              maxLength={300}
-              onChange={handleChange}
-              className="textarea w-full mt-1.5 h-28 bg-base-100/60 focus:border-primary"
-            />
-          </label>
 
-          <div>
-            <Label>skills ({form.skills.length}/10)</Label>
-            <div className="flex gap-2 mt-1.5">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="First name">
+                <input className="input w-full" value={firstName} required onChange={(e) => setFirstName(e.target.value)} />
+              </Field>
+              <Field label="Last name">
+                <input className="input w-full" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </Field>
+            </div>
+
+            <Field label="Photo URL" hint="Paste a link to an image. Leave empty to use your initials.">
               <input
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addSkill();
-                  }
-                }}
-                className="input flex-1 bg-base-100/60 focus:border-primary"
-                placeholder="React, Node.js… press Enter"
+                type="url"
+                className="input w-full"
+                placeholder="https://…"
+                value={photoUrl}
+                onChange={(e) => setPhotoUrl(e.target.value)}
               />
-              <button type="button" onClick={addSkill} className="btn btn-outline btn-secondary">Add</button>
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Age">
+                <input
+                  type="number"
+                  min="16"
+                  max="100"
+                  className="input w-full"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                />
+              </Field>
+              {/* BUG FIX: pehle text box tha — backend sirf male/female/others leta hai */}
+              <Field label="Gender">
+                <select className="select w-full" value={gender} onChange={(e) => setGender(e.target.value)}>
+                  <option value="">Prefer not to say</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="others">Other</option>
+                </select>
+              </Field>
             </div>
-            {form.skills.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {form.skills.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1 font-mono text-xs pl-2.5 pr-1 py-1 rounded-lg bg-secondary/10 text-secondary border border-secondary/20">
-                    {s}
-                    <button type="button" onClick={() => removeSkill(s)} className="hover:text-error p-0.5" aria-label={`Remove ${s}`}>
-                      <XIcon className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+
+            <Field label="Skills" hint="Separate with commas, e.g. React, Node.js, Docker">
+              <input className="input w-full" value={skillsText} onChange={(e) => setSkillsText(e.target.value)} />
+            </Field>
+
+            <Field label="About">
+              <textarea
+                className="textarea w-full h-28"
+                maxLength={300}
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+              />
+              <span className="text-xs opacity-50 self-end">{about.length}/300</span>
+            </Field>
+
+            {error && <p role="alert" className="text-error text-sm">{error}</p>}
+
+            <div className="flex justify-end">
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving && <span className="loading loading-spinner loading-xs" />}
+                Save changes
+              </button>
+            </div>
           </div>
-
-          {error && <div role="alert" className="alert alert-error alert-soft text-sm py-2">{error}</div>}
-
-          <button type="submit" className="btn btn-primary btn-glow w-full" disabled={saving}>
-            {saving && <span className="loading loading-spinner loading-sm" />}
-            Save profile
-          </button>
         </form>
 
-        {/* Live preview — same UserCard as the feed, without action buttons */}
-        <div className="lg:sticky lg:top-24 w-full lg:w-[24rem] mx-auto">
-          <p className="font-mono text-xs text-base-content/50 mb-3 text-center">// live preview</p>
-          <UserCard user={form} />
+        {/* Live preview — type karte hi card update hota hai */}
+        <div className="lg:w-80 lg:sticky lg:top-20">
+          <p className="text-sm opacity-60 mb-2">Preview</p>
+          <UserCard
+            user={{ firstName, lastName, photoUrl, age, gender, about, skills }}
+            showActions={false}
+          />
         </div>
       </div>
 
       {showToast && (
         <div className="toast toast-top toast-center z-50">
-          <div className="alert alert-success shadow-lg">Profile saved successfully ✓</div>
+          <div className="alert alert-success">
+            <span>Profile saved.</span>
+          </div>
         </div>
       )}
-    </section>
+    </>
   );
 };
+
+const Field = ({ label, hint, children }) => (
+  <label className="flex flex-col gap-1">
+    <span className="text-sm font-medium opacity-80">{label}</span>
+    {children}
+    {hint && <span className="text-xs opacity-55">{hint}</span>}
+  </label>
+);
 
 export default EditProfile;
